@@ -877,42 +877,33 @@ def pca_transform(image_uv_path, image_lime_path, image_ir_path):
     global PCA_flag, PCA_count
     PCA_flag = False
     PCA_count += 1
-    # Load the three images with effects
-    image_uv = cv2.imread(image_uv_path)
-    image_lime = cv2.imread(image_lime_path)
-    image_ir = cv2.imread(image_ir_path)
 
-    # Define the effects colors
-    effects = {'UV': [0, 0, 255], 'Lime': [0, 255, 0], 'IR': [255, 0, 0]}
+    # Load images
+    image_uv = cv2.imread(image_uv_path, cv2.IMREAD_GRAYSCALE)
+    image_lime = cv2.imread(image_lime_path, cv2.IMREAD_GRAYSCALE)
+    image_ir = cv2.imread(image_ir_path, cv2.IMREAD_GRAYSCALE)
 
-    # Initialize an array for the combined image (assuming all images have the same size)
-    combined_image = np.zeros_like(image_uv)
+    # Ensure images are of the same size
+    h, w = image_uv.shape
+    image_lime = cv2.resize(image_lime, (w, h))
+    image_ir = cv2.resize(image_ir, (w, h))
 
-    # Apply effects and combine images
-    for effect, color in effects.items():
-        if effect == 'UV':
-            image_effect = cv2.addWeighted(image_uv, 0.5, np.full(image_uv.shape, color, dtype=np.uint8), 0.5, 0)
-        elif effect == 'Lime':
-            image_effect = cv2.addWeighted(image_lime, 0.5, np.full(image_lime.shape, color, dtype=np.uint8), 0.5, 0)
-        elif effect == 'IR':
-            image_effect = cv2.addWeighted(image_ir, 0.5, np.full(image_ir.shape, color, dtype=np.uint8), 0.5, 0)
+    # Stack images into a 2D array where rows are pixels and columns are bands
+    stacked_images = np.stack([image_uv, image_lime, image_ir], axis=-1).reshape(-1, 3)
 
-        # Add the effect to the combined image
-        combined_image = cv2.add(combined_image, image_effect)
+    # Perform Singular Value Decomposition (SVD)
+    U, S, Vt = np.linalg.svd(stacked_images, full_matrices=False)
 
-    # Perform PCA on the combined image
-    pca = PCA(n_components=1)  # Keep 1 principal component
-    combined_image_flat = combined_image.reshape(-1, 1)
-    components = pca.fit_transform(combined_image_flat)
+    # Project onto the first principal component
+    principal_component = U[:, 0] * S[0]
 
-    # Reshape the transformed components back to the original image shape
-    transformed_image = components.reshape(combined_image.shape)
+    # Reshape back into image format
+    transformed_image = principal_component.reshape(h, w)
 
-    # Scale the transformed image components to the range [0, 255]
+    # Normalize to 8-bit grayscale
     transformed_image = cv2.normalize(transformed_image, None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8U)
 
     return transformed_image
-
 
 def pca_effect():
     def open_file(entry):

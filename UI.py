@@ -1241,7 +1241,7 @@ buttons_frame = ctk.CTkFrame(top_frame)
 buttons_frame.grid(row=0, column=1, padx=10)
 
 button_pseudocolor = ctk.CTkButton(buttons_frame, text="Pseudocolor", command=pseudocolor, width=100, height=40)
-button_sharpie = ctk.CTkButton(buttons_frame, text="Sharpie", command=sharpie, width=100, height=40)
+button_sharpie = ctk.CTkButton(buttons_frame, text="Sharpen", command=sharpie, width=100, height=40)
 button_power = ctk.CTkButton(buttons_frame, text="Power", command=power, width=100, height=40)
 button_invert = ctk.CTkButton(buttons_frame, text="Invert", command=invert, width=100, height=40)
 button_rotateRight = ctk.CTkButton(buttons_frame, text="Rotate Right", command=rotateRight, width=100, height=40)

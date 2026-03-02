@@ -503,8 +503,8 @@ class ProteusMainWindow(QMainWindow):
             ratios = result.get("explained", [])
             tip = ""
             if ratios:
-                tip = " | ".join([f"PC{i+1}:{ratios[i]*100:.1f}%" for i in range(min(4, len(ratios)))])
-            self.set_status(f"{label} done: showing PC1 (explained variance: {tip})")
+                tip = " | ".join([f"C{i+1}:{ratios[i]*100:.1f}%" for i in range(min(4, len(ratios)))])
+            self.set_status(f"{label} done: showing Component 1 (explained variance: {tip})")
 
         except Exception as e:
             QMessageBox.critical(self, "Error", f"{label} failed: {e}")
@@ -528,9 +528,9 @@ class ProteusMainWindow(QMainWindow):
         ratios = self._pc_cache.get("explained", [])
         r = ratios[self._pc_index] * 100.0 if self._pc_index < len(ratios) else None
         if r is None:
-            self.set_status(f"Showing: PC{self._pc_index+1}")
+            self.set_status(f"Showing: Component {self._pc_index+1}")
         else:
-            self.set_status(f"Showing: PC{self._pc_index+1} (explained variance {r:.1f}%)")
+            self.set_status(f"Showing: Component {self._pc_index+1} (explained variance {r:.1f}%)")
 
     # ---- Theme management ----
 

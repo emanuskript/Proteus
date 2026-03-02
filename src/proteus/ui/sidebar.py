@@ -297,8 +297,8 @@ class SidebarWidget(QScrollArea):
         pca_row.addWidget(btn_svd)
         lay.addLayout(pca_row)
 
-        btn_next = QPushButton("Next PC")
-        btn_next.setToolTip("Cycle through principal components (run PCA first)")
+        btn_next = QPushButton("Next Result")
+        btn_next.setToolTip("Show next principal component result (run PCA first)")
         btn_next.clicked.connect(self.next_pc_requested)
         lay.addWidget(btn_next)
 

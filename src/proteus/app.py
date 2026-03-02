@@ -4,7 +4,7 @@ import sys
 import cv2
 from PySide6.QtWidgets import QApplication
 from proteus.ui.main_window import ProteusMainWindow
-from proteus.ui.theme import apply_dark_theme
+from proteus.ui.theme import apply_theme
 
 
 def main():
@@ -17,7 +17,8 @@ def main():
     app.setApplicationName("Proteus")
     app.setOrganizationName("Proteus")
 
-    apply_dark_theme(app)
+    # Apply default light theme; main window will load saved preference
+    apply_theme(app, "light")
 
     window = ProteusMainWindow()
     window.show()

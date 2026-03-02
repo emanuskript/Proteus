@@ -4,8 +4,8 @@ import os
 
 import numpy as np
 import cv2
-from PySide6.QtWidgets import QMainWindow, QHBoxLayout, QVBoxLayout, QWidget, QFileDialog, QMessageBox
-from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QMainWindow, QApplication, QHBoxLayout, QVBoxLayout, QWidget, QFileDialog, QMessageBox
+from PySide6.QtCore import Qt, QSettings
 from PySide6.QtGui import QUndoStack, QShortcut, QKeySequence
 
 from proteus.core.processing import (
@@ -21,6 +21,7 @@ from proteus.core.utils import clamp
 from proteus.ui.canvas import ImageCanvas
 from proteus.ui.sidebar import SidebarWidget
 from proteus.ui.status_bar import StatusBar
+from proteus.ui.top_bar import TopBar
 from proteus.ui.dialogs import GammaDialog, InvertDialog, BlurDivideDialog, DenoiseDialog
 from proteus.commands.undo_commands import ImageOperationCommand, DrawStrokeCommand, RoiChangeCommand
 
@@ -32,7 +33,7 @@ class ProteusMainWindow(QMainWindow):
 
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Proteus - Image Processing")
+        self.setWindowTitle("Proteus")
         self.resize(1200, 760)
         self.showMaximized()
 
@@ -54,30 +55,50 @@ class ProteusMainWindow(QMainWindow):
         # Undo stack
         self._undo_stack = QUndoStack(self)
 
-        # ---- UI ----
+        # ---- Build UI ----
         central = QWidget()
         self.setCentralWidget(central)
-        layout = QHBoxLayout(central)
-        layout.setContentsMargins(12, 12, 12, 12)
-        layout.setSpacing(0)
+        outer = QVBoxLayout(central)
+        outer.setContentsMargins(0, 0, 0, 0)
+        outer.setSpacing(0)
+
+        # Top bar (full width)
+        self.top_bar = TopBar()
+        outer.addWidget(self.top_bar)
+
+        # Content area: sidebar + canvas + bottom bar
+        content = QHBoxLayout()
+        content.setContentsMargins(0, 0, 0, 0)
+        content.setSpacing(0)
 
         self.sidebar = SidebarWidget()
-        self.canvas = ImageCanvas()
-        self.status_bar = StatusBar()
+        content.addWidget(self.sidebar)
 
-        layout.addWidget(self.sidebar)
-
+        # Right column: canvas + bottom bar
         right = QWidget()
         right_layout = QVBoxLayout(right)
         right_layout.setContentsMargins(0, 0, 0, 0)
-        right_layout.addWidget(self.status_bar)
+        right_layout.setSpacing(0)
+
+        self.canvas = ImageCanvas()
         right_layout.addWidget(self.canvas, stretch=1)
-        layout.addWidget(right, stretch=1)
+
+        self.status_bar = StatusBar()
+        right_layout.addWidget(self.status_bar)
+
+        content.addWidget(right, stretch=1)
+        outer.addLayout(content)
 
         # ---- Connect signals ----
         self._connect_sidebar()
         self._connect_canvas()
+        self._connect_bottom_bar()
         self._connect_shortcuts()
+
+        # ---- Theme ----
+        self._current_theme = "light"
+        self.top_bar.theme_toggle_clicked.connect(self._cycle_theme)
+        self._load_saved_theme()
 
         self.set_status("Ready: open an image to begin")
 
@@ -91,9 +112,6 @@ class ProteusMainWindow(QMainWindow):
         s.undo_requested.connect(self._undo_stack.undo)
         s.redo_requested.connect(self._undo_stack.redo)
 
-        s.zoom_in_requested.connect(self.canvas.zoom_in)
-        s.zoom_out_requested.connect(self.canvas.zoom_out)
-        s.zoom_reset_requested.connect(self.canvas.reset_view)
         s.mode_changed.connect(self._on_mode_changed)
         s.brush_size_changed.connect(self._on_brush_size_changed)
         s.clear_drawing_requested.connect(self.clear_drawing)
@@ -118,6 +136,12 @@ class ProteusMainWindow(QMainWindow):
         self.canvas.roi_changed.connect(self._on_roi_changed)
         self.canvas.roi_finished.connect(self._on_roi_finished)
         self.canvas.status_message.connect(self.set_status)
+        self.canvas.zoom_changed.connect(self.status_bar.set_zoom_level)
+
+    def _connect_bottom_bar(self):
+        self.status_bar.zoom_in_clicked.connect(self.canvas.zoom_in)
+        self.status_bar.zoom_out_clicked.connect(self.canvas.zoom_out)
+        self.status_bar.zoom_reset_clicked.connect(self.canvas.reset_view)
 
     def _connect_shortcuts(self):
         QShortcut(QKeySequence("Ctrl+Z"), self, self._undo_stack.undo)
@@ -507,3 +531,30 @@ class ProteusMainWindow(QMainWindow):
             self.set_status(f"Showing: PC{self._pc_index+1}")
         else:
             self.set_status(f"Showing: PC{self._pc_index+1} (explained variance {r:.1f}%)")
+
+    # ---- Theme management ----
+
+    def _load_saved_theme(self) -> None:
+        settings = QSettings()
+        saved = settings.value("theme", "light")
+        if saved not in ("light", "dark", "high-contrast"):
+            saved = "light"
+        self._apply_theme(saved)
+
+    def _cycle_theme(self) -> None:
+        from proteus.ui.theme import next_theme
+        new_theme = next_theme(self._current_theme)
+        self._apply_theme(new_theme)
+
+    def _apply_theme(self, name: str) -> None:
+        from proteus.ui.theme import apply_theme, THEME_INFO
+        app = QApplication.instance()
+        if app:
+            apply_theme(app, name)
+        self._current_theme = name
+        self.top_bar.set_theme(name)
+        self.canvas.set_theme(name)
+        self.sidebar.set_theme(name)
+        QSettings().setValue("theme", name)
+        label = THEME_INFO.get(name, ("",))[0]
+        self.set_status(f"Theme: {label}")

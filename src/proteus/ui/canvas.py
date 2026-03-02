@@ -37,6 +37,7 @@ class ImageCanvas(QGraphicsView):
 
     # Signals
     status_message = Signal(str)
+    zoom_changed = Signal(float)
     brush_stroke = Signal(int, int)
     roi_changed = Signal(int, int, int, int)
     roi_finished = Signal()
@@ -53,7 +54,7 @@ class ImageCanvas(QGraphicsView):
         self.setViewportUpdateMode(QGraphicsView.FullViewportUpdate)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.setBackgroundBrush(QBrush(QColor("#111111")))
+        self.setBackgroundBrush(QBrush(QColor("#e5e7eb")))
 
         # Scene items (layered)
         self._image_item = QGraphicsPixmapItem()
@@ -80,7 +81,7 @@ class ImageCanvas(QGraphicsView):
         self._placeholder = self._scene.addText(
             "No image loaded: click [Open Image] on the left"
         )
-        self._placeholder.setDefaultTextColor(QColor("#aaaaaa"))
+        self._placeholder.setDefaultTextColor(QColor("#888888"))
         font = self._placeholder.font()
         font.setPointSize(14)
         self._placeholder.setFont(font)
@@ -146,6 +147,7 @@ class ImageCanvas(QGraphicsView):
         self.resetTransform()
         self._zoom_factor = 1.0
         self.centerOn(self._image_item)
+        self.zoom_changed.emit(1.0)
         self.status_message.emit("Zoom reset: 1.00x")
 
     def clear(self) -> None:
@@ -155,6 +157,13 @@ class ImageCanvas(QGraphicsView):
         self._roi_item.setVisible(False)
         self._image_size = (0, 0)
         self._placeholder.setVisible(True)
+
+    def set_theme(self, theme_name: str) -> None:
+        """Update canvas background and placeholder for the current theme."""
+        from proteus.ui.theme import get_canvas_bg, get_text_sec_color
+        bg = get_canvas_bg(theme_name)
+        self.setBackgroundBrush(QBrush(QColor(bg)))
+        self._placeholder.setDefaultTextColor(QColor(get_text_sec_color(theme_name)))
 
     @property
     def zoom_factor(self) -> float:
@@ -167,6 +176,7 @@ class ImageCanvas(QGraphicsView):
         self._zoom_factor = factor
         self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
         self.scale(scale_change, scale_change)
+        self.zoom_changed.emit(factor)
         self.status_message.emit(f"Zoom: {factor:.2f}x")
 
     # ---- Event handlers ----

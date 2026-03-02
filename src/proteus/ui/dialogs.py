@@ -111,6 +111,31 @@ class BlurDivideDialog(QDialog):
         return None
 
 
+class ThresholdDialog(QDialog):
+    """Custom binarization threshold input (0-255)."""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("B/W Custom Threshold")
+        layout = QVBoxLayout(self)
+
+        layout.addWidget(QLabel("Threshold (0-255):"))
+        self.thresh_spin = QSpinBox()
+        self.thresh_spin.setRange(0, 255)
+        self.thresh_spin.setValue(128)
+        layout.addWidget(self.thresh_spin)
+
+        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttons.accepted.connect(self.accept)
+        buttons.rejected.connect(self.reject)
+        layout.addWidget(buttons)
+
+    def get_value(self) -> Optional[int]:
+        if self.exec() == QDialog.Accepted:
+            return self.thresh_spin.value()
+        return None
+
+
 class DenoiseDialog(QDialog):
     """Kernel size + sigma input for Gaussian denoising."""
 

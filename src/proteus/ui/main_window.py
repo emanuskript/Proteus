@@ -10,7 +10,7 @@ from PySide6.QtGui import QUndoStack, QShortcut, QKeySequence
 
 from proteus.core.processing import (
     ensure_gray, ensure_color, to_uint8,
-    pseudocolor_jet, otsu_binarize, fixed_binarize,
+    pseudocolor_jet, otsu_binarize, fixed_binarize, unsharp_mask,
     power_transform, blur_divide, denoise_gaussian, rotate_90,
 )
 from proteus.core.pca import pca_multiband, pca_multiband_svd_variant
@@ -22,7 +22,7 @@ from proteus.ui.canvas import ImageCanvas
 from proteus.ui.sidebar import SidebarWidget
 from proteus.ui.status_bar import StatusBar
 from proteus.ui.top_bar import TopBar
-from proteus.ui.dialogs import GammaDialog, InvertDialog, BlurDivideDialog, DenoiseDialog
+from proteus.ui.dialogs import GammaDialog, InvertDialog, BlurDivideDialog, DenoiseDialog, ThresholdDialog
 from proteus.commands.undo_commands import ImageOperationCommand, DrawStrokeCommand, RoiChangeCommand
 
 IMAGE_FILTER = "Image Files (*.png *.jpg *.jpeg *.bmp *.tif *.tiff);;All Files (*.*)"
@@ -119,8 +119,10 @@ class ProteusMainWindow(QMainWindow):
 
         s.pseudocolor_requested.connect(self.apply_pseudocolor_channel)
         s.pseudocolor_two_requested.connect(self.apply_pseudocolor_two)
-        s.sharpen_otsu_requested.connect(self.apply_sharpen_otsu)
-        s.sharpen_fixed_requested.connect(self.apply_sharpen_fixed)
+        s.sharpen_original_requested.connect(self.apply_sharpen_original)
+        s.sharpen_bw_auto_requested.connect(self.apply_sharpen_bw_auto)
+        s.sharpen_bw_128_requested.connect(self.apply_sharpen_bw_128)
+        s.sharpen_bw_custom_requested.connect(self.apply_sharpen_bw_custom)
         s.power_requested.connect(self.apply_power)
         s.invert_requested.connect(self.apply_invert)
         s.rotate_requested.connect(self.apply_rotate)
@@ -390,11 +392,24 @@ class ProteusMainWindow(QMainWindow):
         except Exception as e:
             QMessageBox.critical(self, "Error", str(e))
 
-    def apply_sharpen_otsu(self) -> None:
-        self._apply_op(lambda img: otsu_binarize(img), {"op": "sharpen_otsu"})
+    def apply_sharpen_original(self) -> None:
+        self._apply_op(lambda img: unsharp_mask(img), {"op": "sharpen_original"})
 
-    def apply_sharpen_fixed(self) -> None:
-        self._apply_op(lambda img: fixed_binarize(img, thresh=128), {"op": "sharpen_fixed", "thresh": 128})
+    def apply_sharpen_bw_auto(self) -> None:
+        self._apply_op(lambda img: otsu_binarize(img), {"op": "sharpen_bw_auto"})
+
+    def apply_sharpen_bw_128(self) -> None:
+        self._apply_op(lambda img: fixed_binarize(img, thresh=128), {"op": "sharpen_bw_128", "thresh": 128})
+
+    def apply_sharpen_bw_custom(self) -> None:
+        if self.img is None:
+            QMessageBox.information(self, "Info", "Please open an image first")
+            return
+        dlg = ThresholdDialog(self)
+        thresh = dlg.get_value()
+        if thresh is None:
+            return
+        self._apply_op(lambda img: fixed_binarize(img, thresh=thresh), {"op": "sharpen_bw_custom", "thresh": thresh})
 
     def apply_power(self) -> None:
         if self.img is None:

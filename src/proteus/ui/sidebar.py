@@ -73,8 +73,10 @@ class SidebarWidget(QScrollArea):
     # Section 3: Image Processing
     pseudocolor_requested = Signal(str)
     pseudocolor_two_requested = Signal()
-    sharpen_otsu_requested = Signal()
-    sharpen_fixed_requested = Signal()
+    sharpen_original_requested = Signal()
+    sharpen_bw_auto_requested = Signal()
+    sharpen_bw_128_requested = Signal()
+    sharpen_bw_custom_requested = Signal()
     power_requested = Signal()
     invert_requested = Signal()
     rotate_requested = Signal(str)
@@ -227,17 +229,19 @@ class SidebarWidget(QScrollArea):
         self._sub_labels.append(sub_lbl2)
         lay.addWidget(sub_lbl2)
 
-        sharp = QHBoxLayout()
-        sharp.setSpacing(4)
-        btn_otsu = QPushButton("Otsu")
-        btn_otsu.setToolTip("Auto-threshold binarization (Otsu)")
-        btn_otsu.clicked.connect(self.sharpen_otsu_requested)
-        btn_fix = QPushButton("Fixed 128")
-        btn_fix.setToolTip("Fixed threshold binarization at 128")
-        btn_fix.clicked.connect(self.sharpen_fixed_requested)
-        sharp.addWidget(btn_otsu)
-        sharp.addWidget(btn_fix)
-        lay.addLayout(sharp)
+        sharp_grid = QGridLayout()
+        sharp_grid.setSpacing(4)
+        for i, (text, tip, sig) in enumerate([
+            ("Original",   "Sharpen using unsharp mask",               self.sharpen_original_requested),
+            ("B/W Auto",   "Auto-threshold binarization (Otsu)",        self.sharpen_bw_auto_requested),
+            ("B/W 128",    "Fixed threshold binarization at 128",       self.sharpen_bw_128_requested),
+            ("B/W Custom", "Custom threshold binarization (dialog)",    self.sharpen_bw_custom_requested),
+        ]):
+            btn = QPushButton(text)
+            btn.setToolTip(tip)
+            btn.clicked.connect(sig)
+            sharp_grid.addWidget(btn, i // 2, i % 2)
+        lay.addLayout(sharp_grid)
 
         # -- Enhance
         self._add_separator(lay)

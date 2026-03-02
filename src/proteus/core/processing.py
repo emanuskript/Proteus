@@ -142,6 +142,14 @@ def denoise_gaussian(img: np.ndarray, ksize: int = 5, sigma: float = 1.0) -> np.
     return cv2.GaussianBlur(img, (ksize, ksize), sigmaX=sigma)
 
 
+def unsharp_mask(img: np.ndarray, sigma: float = 1.0, strength: float = 1.5) -> np.ndarray:
+    """Sharpen by subtracting a blurred version (unsharp masking). Works on grayscale or color."""
+    if img is None:
+        return img
+    blurred = cv2.GaussianBlur(img, (0, 0), sigmaX=sigma)
+    return cv2.addWeighted(img, 1.0 + strength, blurred, -strength, 0)
+
+
 def rotate_90(img: np.ndarray, direction: str) -> np.ndarray:
     if img is None:
         return img

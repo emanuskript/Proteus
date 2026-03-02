@@ -82,6 +82,7 @@ class SidebarWidget(QScrollArea):
     denoise_requested = Signal()
     pca_requested = Signal()
     pca_svd_requested = Signal()
+    prev_pc_requested = Signal()
     next_pc_requested = Signal()
 
     def __init__(self, parent=None):
@@ -297,10 +298,17 @@ class SidebarWidget(QScrollArea):
         pca_row.addWidget(btn_svd)
         lay.addLayout(pca_row)
 
+        nav_row = QHBoxLayout()
+        nav_row.setSpacing(4)
+        btn_prev = QPushButton("Prev Result")
+        btn_prev.setToolTip("Show previous principal component result (run PCA first)")
+        btn_prev.clicked.connect(self.prev_pc_requested)
         btn_next = QPushButton("Next Result")
         btn_next.setToolTip("Show next principal component result (run PCA first)")
         btn_next.clicked.connect(self.next_pc_requested)
-        lay.addWidget(btn_next)
+        nav_row.addWidget(btn_prev)
+        nav_row.addWidget(btn_next)
+        lay.addLayout(nav_row)
 
         self._layout.addWidget(section)
 

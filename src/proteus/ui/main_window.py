@@ -128,6 +128,7 @@ class ProteusMainWindow(QMainWindow):
         s.denoise_requested.connect(self.apply_denoise)
         s.pca_requested.connect(self.apply_pca)
         s.pca_svd_requested.connect(self.apply_pca_svd)
+        s.prev_pc_requested.connect(self.prev_pc)
         s.next_pc_requested.connect(self.next_pc)
 
     def _connect_canvas(self):
@@ -511,12 +512,18 @@ class ProteusMainWindow(QMainWindow):
             self.set_status(f"{label} failed")
 
     def next_pc(self) -> None:
+        self._switch_pc(+1)
+
+    def prev_pc(self) -> None:
+        self._switch_pc(-1)
+
+    def _switch_pc(self, direction: int) -> None:
         if not self._pc_cache or "pcs" not in self._pc_cache:
             self.set_status("No PCA result found: run PCA first")
             return
         pcs = self._pc_cache["pcs"]
         before = self._snapshot()
-        self._pc_index = (self._pc_index + 1) % len(pcs)
+        self._pc_index = (self._pc_index + direction) % len(pcs)
         self.img = pcs[self._pc_index].copy()
         self.draw_mask = None
 
@@ -527,10 +534,11 @@ class ProteusMainWindow(QMainWindow):
 
         ratios = self._pc_cache.get("explained", [])
         r = ratios[self._pc_index] * 100.0 if self._pc_index < len(ratios) else None
+        n = len(pcs)
         if r is None:
-            self.set_status(f"Showing: Component {self._pc_index+1}")
+            self.set_status(f"Showing: Component {self._pc_index+1} of {n}")
         else:
-            self.set_status(f"Showing: Component {self._pc_index+1} (explained variance {r:.1f}%)")
+            self.set_status(f"Showing: Component {self._pc_index+1} of {n} (explained variance {r:.1f}%)")
 
     # ---- Theme management ----
 

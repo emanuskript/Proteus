@@ -22,7 +22,7 @@ from proteus.ui.canvas import ImageCanvas
 from proteus.ui.sidebar import SidebarWidget
 from proteus.ui.status_bar import StatusBar
 from proteus.ui.top_bar import TopBar
-from proteus.ui.dialogs import GammaDialog, InvertDialog, BlurDivideDialog, DenoiseDialog, ThresholdDialog
+from proteus.ui.dialogs import GammaDialog, InvertDialog, BlurDivideDialog, DenoiseDialog, ThresholdDialog, BandLabelDialog
 from proteus.commands.undo_commands import ImageOperationCommand, DrawStrokeCommand, RoiChangeCommand
 
 IMAGE_FILTER = "Image Files (*.png *.jpg *.jpeg *.bmp *.tif *.tiff);;All Files (*.*)"
@@ -44,6 +44,7 @@ class ProteusMainWindow(QMainWindow):
         self.brush_size: int = 3
         self._pc_cache: dict | None = None
         self._pc_index: int = 0
+        self._band_labels: tuple | None = None
         self.ops_log = OperationLog()
 
         # For brush undo: snapshot mask at stroke start
@@ -369,6 +370,14 @@ class ProteusMainWindow(QMainWindow):
         )
         if not paths or len(paths) < 2:
             return
+
+        f1 = os.path.basename(paths[0])
+        f2 = os.path.basename(paths[1])
+        dlg = BandLabelDialog(f1, f2, self)
+        labels = dlg.get_values()
+        if labels is None:
+            return
+
         try:
             g1 = load_as_gray(paths[0])
             g2 = load_as_gray(paths[1])
@@ -383,12 +392,17 @@ class ProteusMainWindow(QMainWindow):
             self.roi = None
             self._pc_cache = None
             self._pc_index = 0
+            self._band_labels = labels
             self._undo_stack.clear()
             self.ops_log.clear()
-            self.ops_log.record({"op": "pseudocolor_two", "p1": paths[0], "p2": paths[1]})
+            self.ops_log.record({
+                "op": "pseudocolor_two",
+                "p1": paths[0], "p2": paths[1],
+                "band1_label": labels[0], "band2_label": labels[1],
+            })
             self._update_canvas()
             self.canvas.reset_view()
-            self.set_status("Done: Pseudocolor (Merge Two Images)")
+            self.set_status(f"Done: Pseudocolor (Merge) [{labels[0]} + {labels[1]}]")
         except Exception as e:
             QMessageBox.critical(self, "Error", str(e))
 

@@ -4,7 +4,7 @@ from typing import Optional, Tuple
 
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QLabel,
-    QDoubleSpinBox, QSpinBox, QCheckBox, QDialogButtonBox
+    QDoubleSpinBox, QSpinBox, QCheckBox, QDialogButtonBox, QLineEdit
 )
 
 
@@ -108,6 +108,37 @@ class BlurDivideDialog(QDialog):
             if k % 2 == 0:
                 k += 1
             return (k, self.sigma_spin.value())
+        return None
+
+
+class BandLabelDialog(QDialog):
+    """Ask the user for short labels for two merged bands (e.g. UV, IR)."""
+
+    def __init__(self, filename1: str, filename2: str, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Band Labels")
+        layout = QVBoxLayout(self)
+
+        layout.addWidget(QLabel(f"Label for band 1  ({filename1}):"))
+        self.label1 = QLineEdit()
+        self.label1.setPlaceholderText("e.g. UV")
+        layout.addWidget(self.label1)
+
+        layout.addWidget(QLabel(f"Label for band 2  ({filename2}):"))
+        self.label2 = QLineEdit()
+        self.label2.setPlaceholderText("e.g. IR")
+        layout.addWidget(self.label2)
+
+        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttons.accepted.connect(self.accept)
+        buttons.rejected.connect(self.reject)
+        layout.addWidget(buttons)
+
+    def get_values(self) -> Optional[tuple[str, str]]:
+        if self.exec() == QDialog.Accepted:
+            l1 = self.label1.text().strip() or "Band1"
+            l2 = self.label2.text().strip() or "Band2"
+            return (l1, l2)
         return None
 
 

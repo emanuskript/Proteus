@@ -4,16 +4,37 @@ PyInstaller spec file for Proteus (PySide6 version).
 
 Usage:
     pyinstaller --clean --noconfirm packaging/Proteus.spec
+
+Icons (place these files in packaging/ before building):
+    Windows : packaging/Proteus.ico   (256x256 multi-size ICO)
+    macOS   : packaging/Proteus.icns  (converted from 1024x1024 PNG via iconutil)
+    Linux   : no icon needed; the .png is embedded as app_datas
 """
 
 import os
-from PyInstaller.utils.hooks import collect_data_files, collect_submodules
+import sys
+from PyInstaller.utils.hooks import collect_data_files
 
 # ---- Project root (one level up from packaging/) ----
 PROJECT_ROOT = os.path.normpath(os.path.join(SPECPATH, '..'))
 
+# ---- Version (single source of truth: pyproject.toml) ----
+APP_VERSION = '2.0.0'
+APP_NAME    = 'Proteus'
+
 # ---- Configuration ----
 ONEFILE = False
+
+# ---- Platform-aware icon ----
+_ico  = os.path.join(SPECPATH, 'Proteus.ico')
+_icns = os.path.join(SPECPATH, 'Proteus.icns')
+
+if sys.platform == 'win32' and os.path.isfile(_ico):
+    ICON = _ico
+elif sys.platform == 'darwin' and os.path.isfile(_icns):
+    ICON = _icns
+else:
+    ICON = None          # Linux: no icon needed in EXE
 
 # ---- PySide6 data files ----
 # Only collect plugins needed for basic widget rendering (platforms, imageformats, styles).
@@ -88,7 +109,11 @@ a = Analysis(
     optimize=0,
 )
 
-pyz = PYZ(a.pure, a.zipped_data, cipher=None)
+pyz = PYZ(a.pure)
+
+# ---- Windows version metadata ----
+_version_file = os.path.join(SPECPATH, 'version_info.txt')
+_win_version   = _version_file if sys.platform == 'win32' and os.path.isfile(_version_file) else None
 
 if ONEFILE:
     exe = EXE(
@@ -97,7 +122,7 @@ if ONEFILE:
         a.binaries,
         a.datas,
         [],
-        name='Proteus',
+        name=APP_NAME,
         debug=False,
         bootloader_ignore_signals=False,
         strip=False,
@@ -110,6 +135,8 @@ if ONEFILE:
         target_arch=None,
         codesign_identity=None,
         entitlements_file=None,
+        icon=ICON,
+        version=_win_version,
     )
 else:
     exe = EXE(
@@ -117,7 +144,7 @@ else:
         a.scripts,
         [],
         exclude_binaries=True,
-        name='Proteus',
+        name=APP_NAME,
         debug=False,
         bootloader_ignore_signals=False,
         strip=False,
@@ -128,6 +155,8 @@ else:
         target_arch=None,
         codesign_identity=None,
         entitlements_file=None,
+        icon=ICON,
+        version=_win_version,
     )
     coll = COLLECT(
         exe,
@@ -136,5 +165,23 @@ else:
         strip=False,
         upx=True,
         upx_exclude=[],
-        name='Proteus',
+        name=APP_NAME,
+    )
+
+# ---- macOS .app bundle ----
+if sys.platform == 'darwin':
+    app = BUNDLE(
+        coll if not ONEFILE else exe,
+        name=f'{APP_NAME}.app',
+        icon=ICON,
+        bundle_identifier='com.proteus.image',
+        info_plist={
+            'CFBundleName':              APP_NAME,
+            'CFBundleDisplayName':       APP_NAME,
+            'CFBundleVersion':           APP_VERSION,
+            'CFBundleShortVersionString': APP_VERSION,
+            'NSHighResolutionCapable':   True,
+            'LSMinimumSystemVersion':    '11.0',
+            'NSHumanReadableCopyright':  f'Copyright 2024 Proteus. All rights reserved.',
+        },
     )

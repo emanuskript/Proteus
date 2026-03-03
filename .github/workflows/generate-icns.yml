@@ -1,0 +1,28 @@
+name: Generate macOS Icon
+
+on:
+  workflow_dispatch:  # run manually from GitHub Actions UI
+
+jobs:
+  generate:
+    name: Generate Proteus.icns
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate .icns
+        run: |
+          mkdir -p packaging/Proteus.iconset
+          for size in 16 32 64 128 256 512; do
+            sips -z $size $size src/proteus/resources/Proteus.png \
+              --out packaging/Proteus.iconset/icon_${size}x${size}.png
+          done
+          iconutil -c icns packaging/Proteus.iconset -o packaging/Proteus.icns
+          echo "Generated: $(ls -lh packaging/Proteus.icns)"
+
+      - name: Upload .icns artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Proteus-icns
+          path: packaging/Proteus.icns

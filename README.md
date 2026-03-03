@@ -1,7 +1,7 @@
 # Proteus
 
 <p align="center">
-  <img src="src/proteus/resources/Proteus.png" alt="Proteus Logo" width="180">
+  <img src="Proteus/src/proteus/resources/Proteus.png" alt="Proteus Logo" width="180">
 </p>
 
 <p align="center">

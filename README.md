@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <strong>Scientific Image Processing Desktop Application</strong>
+  <strong>Proteus</strong>
 </p>
 
 ---

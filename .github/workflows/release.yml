@@ -30,16 +30,6 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Generate macOS icon (.icns)
-        if: runner.os == 'macOS'
-        run: |
-          mkdir -p packaging/Proteus.iconset
-          for size in 16 32 64 128 256 512; do
-            sips -z $size $size src/proteus/resources/Proteus.png \
-              --out packaging/Proteus.iconset/icon_${size}x${size}.png
-          done
-          iconutil -c icns packaging/Proteus.iconset -o packaging/Proteus.icns
-
       - name: Build (Linux / macOS)
         if: runner.os != 'Windows'
         run: bash packaging/build.sh --skip-tests

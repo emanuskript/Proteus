@@ -4,7 +4,7 @@ import os
 
 import numpy as np
 import cv2
-from PySide6.QtWidgets import QMainWindow, QApplication, QHBoxLayout, QVBoxLayout, QWidget, QFileDialog, QMessageBox
+from PySide6.QtWidgets import QMainWindow, QApplication, QHBoxLayout, QVBoxLayout, QWidget, QFileDialog, QMessageBox, QLabel, QStackedLayout
 from PySide6.QtCore import Qt, QSettings
 from PySide6.QtGui import QUndoStack, QShortcut, QKeySequence
 
@@ -22,6 +22,7 @@ from proteus.ui.canvas import ImageCanvas
 from proteus.ui.sidebar import SidebarWidget
 from proteus.ui.status_bar import StatusBar
 from proteus.ui.top_bar import TopBar
+from proteus.ui.qt_image import load_scaled_resource_pixmap
 from proteus.ui.dialogs import GammaDialog, InvertDialog, BlurDivideDialog, DenoiseDialog, ThresholdDialog, BandLabelDialog
 from proteus.commands.undo_commands import ImageOperationCommand, DrawStrokeCommand, RoiChangeCommand
 
@@ -88,8 +89,17 @@ class ProteusMainWindow(QMainWindow):
         right_layout.setContentsMargins(0, 0, 0, 0)
         right_layout.setSpacing(0)
 
+        self._canvas_stack_host = QWidget()
+        self._canvas_stack = QStackedLayout(self._canvas_stack_host)
+        self._canvas_stack.setContentsMargins(0, 0, 0, 0)
+        self._canvas_stack.setStackingMode(QStackedLayout.StackOne)
+
+        self._empty_state = self._build_empty_state()
+        self._canvas_stack.addWidget(self._empty_state)
+
         self.canvas = ImageCanvas()
-        right_layout.addWidget(self.canvas, stretch=1)
+        self._canvas_stack.addWidget(self.canvas)
+        right_layout.addWidget(self._canvas_stack_host, stretch=1)
 
         self.status_bar = StatusBar()
         right_layout.addWidget(self.status_bar)
@@ -184,11 +194,42 @@ class ProteusMainWindow(QMainWindow):
     def _update_canvas(self) -> None:
         if self.img is not None:
             self.canvas.set_image(self.img)
+            self._canvas_stack.setCurrentWidget(self.canvas)
         else:
             self.canvas.clear()
+            self._canvas_stack.setCurrentWidget(self._empty_state)
         self.canvas.set_draw_mask(self.draw_mask)
         self.canvas.set_roi(self.roi)
         self.sidebar.set_roi_coordinates(self.roi)
+
+    def _build_empty_state(self) -> QWidget:
+        widget = QWidget()
+        widget.setObjectName("emptyState")
+
+        layout = QVBoxLayout(widget)
+        layout.setContentsMargins(24, 36, 24, 24)
+        layout.setSpacing(18)
+        layout.setAlignment(Qt.AlignTop | Qt.AlignHCenter)
+
+        self._empty_logo = QLabel(widget)
+        self._empty_logo.setObjectName("emptyStateLogo")
+        self._empty_logo.setAlignment(Qt.AlignCenter)
+        self._empty_logo.setFixedSize(232, 232)
+        empty_pixmap = load_scaled_resource_pixmap("Proteus-logo.png", 220)
+        if not empty_pixmap.isNull():
+            self._empty_logo.setPixmap(empty_pixmap)
+        layout.addWidget(self._empty_logo, alignment=Qt.AlignCenter)
+
+        self._empty_label = QLabel("No image loaded: click [Open Image] on the left")
+        self._empty_label.setObjectName("emptyStateText")
+        self._empty_label.setAlignment(Qt.AlignCenter)
+        self._empty_label.setWordWrap(True)
+        self._empty_label.setMaximumWidth(420)
+        layout.addWidget(self._empty_label, alignment=Qt.AlignCenter)
+
+        layout.addStretch(1)
+
+        return widget
 
     def set_status(self, text: str) -> None:
         self.status_bar.set_text(text)
@@ -610,6 +651,11 @@ class ProteusMainWindow(QMainWindow):
         self.top_bar.set_theme(name)
         self.canvas.set_theme(name)
         self.sidebar.set_theme(name)
+        from proteus.ui.theme import get_canvas_bg, get_text_sec_color
+        self._empty_state.setStyleSheet(f"background-color: {get_canvas_bg(name)};")
+        self._empty_label.setStyleSheet(
+            f"font-size: 14px; color: {get_text_sec_color(name)}; background: transparent;"
+        )
         QSettings().setValue("theme", name)
         label = THEME_INFO.get(name, ("",))[0]
         self.set_status(f"Theme: {label}")

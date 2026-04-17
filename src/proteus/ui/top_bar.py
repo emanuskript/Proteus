@@ -1,10 +1,9 @@
 """Top application bar with logo and theme toggle."""
 
-from PySide6.QtGui import QPixmap
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QPushButton
 
-from proteus.core.utils import resource_path
+from proteus.ui.qt_image import load_scaled_resource_pixmap
 from proteus.ui.theme import THEME_INFO, next_theme
 
 
@@ -25,16 +24,17 @@ class TopBar(QFrame):
         self._brand = QLabel()
         self._brand.setObjectName("appLogo")
         self._brand.setToolTip("Proteus")
-        self._brand.setAlignment(Qt.AlignVCenter | Qt.AlignLeft)
-        logo_pixmap = QPixmap(resource_path("Proteus-logo.png"))
-        if not logo_pixmap.isNull():
-            self._brand.setPixmap(
-                logo_pixmap.scaled(36, 36, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-            )
-            self._brand.setFixedSize(44, 44)
-        else:
-            self._brand.setText("Proteus")
+        self._brand.setAlignment(Qt.AlignCenter)
+        self._brand.setFixedSize(40, 40)
+        brand_pixmap = load_scaled_resource_pixmap("Proteus-logo.png", 32)
+        if not brand_pixmap.isNull():
+            self._brand.setPixmap(brand_pixmap)
         layout.addWidget(self._brand)
+
+        if self._brand.pixmap() is None or self._brand.pixmap().isNull():
+            self._brand_fallback = QLabel("Proteus")
+            self._brand_fallback.setObjectName("appLogoText")
+            layout.addWidget(self._brand_fallback)
 
         layout.addStretch()
 

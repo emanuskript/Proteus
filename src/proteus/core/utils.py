@@ -2,13 +2,24 @@
 
 import os
 import sys
+from pathlib import Path
 
 
 def resource_path(relative_path: str) -> str:
-    """Return absolute path to a resource, works in dev and PyInstaller bundle."""
-    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
-        return os.path.join(sys._MEIPASS, relative_path)
-    return os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'resources', relative_path)
+    """Return absolute path to a resource, in dev and PyInstaller builds."""
+    if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+        bundle_root = Path(sys._MEIPASS)
+        direct = bundle_root / relative_path
+        if direct.exists():
+            return str(direct)
+
+        packaged = bundle_root / "proteus" / "resources" / relative_path
+        if packaged.exists():
+            return str(packaged)
+
+        return str(direct)
+
+    return str(Path(__file__).resolve().parent.parent / "resources" / relative_path)
 
 
 def clamp(v, lo, hi):

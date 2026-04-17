@@ -11,8 +11,6 @@ from PySide6.QtGui import QPixmap, QImage, QPen, QColor, QPainter, QBrush, QWhee
 import numpy as np
 import cv2
 
-from proteus.core.utils import resource_path
-
 
 class DrawOverlayItem(QGraphicsPixmapItem):
     """Transparent overlay that renders the brush mask as yellow highlights."""
@@ -81,33 +79,10 @@ class ImageCanvas(QGraphicsView):
         # Start in pan mode
         self.setDragMode(QGraphicsView.ScrollHandDrag)
 
-        # Placeholder text
-        self._placeholder_logo = QGraphicsPixmapItem()
-        self._scene.addItem(self._placeholder_logo)
-        try:
-            logo_path = resource_path("Proteus-logo.png")
-            logo_pixmap = QPixmap(logo_path)
-            if not logo_pixmap.isNull():
-                self._placeholder_logo.setPixmap(
-                    logo_pixmap.scaled(220, 220, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-                )
-        except Exception:
-            pass
-
-        self._placeholder = self._scene.addText(
-            "No image loaded: click [Open Image] on the left"
-        )
-        self._placeholder.setDefaultTextColor(QColor("#888888"))
-        font = self._placeholder.font()
-        font.setPointSize(14)
-        self._placeholder.setFont(font)
         self._scene.setSceneRect(QRectF(self.viewport().rect()))
-        self._update_placeholder_layout()
 
     def set_image(self, img: np.ndarray) -> None:
         """Display an OpenCV image (BGR or grayscale uint8)."""
-        self._placeholder.setVisible(False)
-        self._placeholder_logo.setVisible(False)
         if img.ndim == 2:
             h, w = img.shape
             rgb = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
@@ -185,17 +160,13 @@ class ImageCanvas(QGraphicsView):
         self._image_size = (0, 0)
         self._drawing = False
         self._roi_active = False
-        self._placeholder.setVisible(True)
-        self._placeholder_logo.setVisible(not self._placeholder_logo.pixmap().isNull())
         self._scene.setSceneRect(QRectF(self.viewport().rect()))
-        self._update_placeholder_layout()
 
     def set_theme(self, theme_name: str) -> None:
-        """Update canvas background and placeholder for the current theme."""
-        from proteus.ui.theme import get_canvas_bg, get_text_sec_color
+        """Update canvas background for the current theme."""
+        from proteus.ui.theme import get_canvas_bg
         bg = get_canvas_bg(theme_name)
         self.setBackgroundBrush(QBrush(QColor(bg)))
-        self._placeholder.setDefaultTextColor(QColor(get_text_sec_color(theme_name)))
 
     @property
     def zoom_factor(self) -> float:
@@ -218,34 +189,6 @@ class ImageCanvas(QGraphicsView):
         x = max(0, min(int(round(scene_pos.x())), w - 1))
         y = max(0, min(int(round(scene_pos.y())), h - 1))
         return x, y
-
-    def _update_placeholder_layout(self) -> None:
-        if not self._placeholder.isVisible():
-            return
-        scene_rect = self._scene.sceneRect()
-        center = scene_rect.center()
-
-        logo_rect = self._placeholder_logo.boundingRect()
-        text_rect = self._placeholder.boundingRect()
-        gap = 12
-
-        total_h = text_rect.height()
-        if not self._placeholder_logo.pixmap().isNull():
-            total_h += logo_rect.height() + gap
-
-        top_y = center.y() - (total_h / 2)
-
-        if not self._placeholder_logo.pixmap().isNull():
-            self._placeholder_logo.setPos(
-                center.x() - (logo_rect.width() / 2),
-                top_y,
-            )
-            top_y += logo_rect.height() + gap
-
-        self._placeholder.setPos(
-            center.x() - (text_rect.width() / 2),
-            top_y,
-        )
 
     # ---- Event handlers ----
 
@@ -310,4 +253,3 @@ class ImageCanvas(QGraphicsView):
         super().resizeEvent(event)
         if self._image_item.pixmap().isNull():
             self._scene.setSceneRect(QRectF(self.viewport().rect()))
-            self._update_placeholder_layout()

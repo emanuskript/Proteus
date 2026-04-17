@@ -85,11 +85,11 @@ class ImageCanvas(QGraphicsView):
         self._placeholder_logo = QGraphicsPixmapItem()
         self._scene.addItem(self._placeholder_logo)
         try:
-            logo_path = resource_path("Proteus.png")
+            logo_path = resource_path("Proteus-logo.png")
             logo_pixmap = QPixmap(logo_path)
             if not logo_pixmap.isNull():
                 self._placeholder_logo.setPixmap(
-                    logo_pixmap.scaled(180, 180, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                    logo_pixmap.scaled(220, 220, Qt.KeepAspectRatio, Qt.SmoothTransformation)
                 )
         except Exception:
             pass

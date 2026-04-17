@@ -19,7 +19,7 @@ from PyInstaller.utils.hooks import collect_data_files
 PROJECT_ROOT = os.path.normpath(os.path.join(SPECPATH, '..'))
 
 # ---- Version (single source of truth: pyproject.toml) ----
-APP_VERSION = "3.0.1"
+APP_VERSION = "3.0.2"
 APP_NAME    = 'Proteus'
 
 # ---- Configuration ----
@@ -58,6 +58,8 @@ all_hiddenimports = [
 # ---- Application data files ----
 app_datas = [
     (os.path.join(PROJECT_ROOT, 'src', 'proteus', 'resources', 'Proteus.png'),
+     os.path.join('proteus', 'resources')),
+    (os.path.join(PROJECT_ROOT, 'src', 'proteus', 'resources', 'Proteus-logo.png'),
      os.path.join('proteus', 'resources')),
 ]
 

@@ -26,12 +26,12 @@ class TopBar(QFrame):
         self._brand.setObjectName("appLogo")
         self._brand.setToolTip("Proteus")
         self._brand.setAlignment(Qt.AlignVCenter | Qt.AlignLeft)
-        logo_pixmap = QPixmap(resource_path("Proteus.png"))
+        logo_pixmap = QPixmap(resource_path("Proteus-logo.png"))
         if not logo_pixmap.isNull():
             self._brand.setPixmap(
-                logo_pixmap.scaled(32, 32, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                logo_pixmap.scaled(36, 36, Qt.KeepAspectRatio, Qt.SmoothTransformation)
             )
-            self._brand.setFixedSize(40, 40)
+            self._brand.setFixedSize(44, 44)
         else:
             self._brand.setText("Proteus")
         layout.addWidget(self._brand)

@@ -7,7 +7,7 @@ from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QScrollArea, QHBoxLayout,
     QPushButton, QSlider, QLabel, QGridLayout
 )
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, Signal, QTimer
 
 
 # ---------------------------------------------------------------------------
@@ -102,6 +102,9 @@ class SidebarWidget(QScrollArea):
         self._mode_buttons = {}
         self._sub_labels: list[QLabel] = []
         self._separators: list[QWidget] = []
+        self._roi_hint_timer = QTimer(self)
+        self._roi_hint_timer.setSingleShot(True)
+        self._roi_hint_timer.timeout.connect(self._hide_roi_hint)
 
         self._build_files_section()
         self._build_view_section()
@@ -148,6 +151,12 @@ class SidebarWidget(QScrollArea):
         section = CollapsibleSection("View / Annotate")
         lay = section.content_layout
 
+        self._roi_hint = QLabel("Click and Drag to select")
+        self._roi_hint.setObjectName("roiHintLabel")
+        self._roi_hint.setWordWrap(True)
+        self._roi_hint.hide()
+        lay.addWidget(self._roi_hint)
+
         # Mode buttons
         mode_layout = QHBoxLayout()
         mode_layout.setSpacing(6)
@@ -180,6 +189,12 @@ class SidebarWidget(QScrollArea):
         self._brush_slider.valueChanged.connect(self.brush_size_changed)
         brush_row.addWidget(self._brush_slider, stretch=1)
         lay.addLayout(brush_row)
+
+        self._roi_coords = QLabel("")
+        self._roi_coords.setObjectName("roiCoordsLabel")
+        self._roi_coords.setWordWrap(True)
+        self._roi_coords.hide()
+        lay.addWidget(self._roi_coords)
 
         # Clear buttons
         clear_row = QHBoxLayout()
@@ -328,6 +343,31 @@ class SidebarWidget(QScrollArea):
         """Visually highlight the active mode button."""
         for key, btn in self._mode_buttons.items():
             btn.setChecked(key == mode)
+
+    def show_roi_hint(self) -> None:
+        self._roi_hint.show()
+        self._roi_hint_timer.start(3000)
+
+    def hide_roi_hint(self) -> None:
+        self._roi_hint_timer.stop()
+        self._roi_hint.hide()
+
+    def _hide_roi_hint(self) -> None:
+        self.hide_roi_hint()
+
+    def set_roi_coordinates(self, roi: tuple | None) -> None:
+        if roi is None:
+            self._roi_coords.clear()
+            self._roi_coords.hide()
+            return
+
+        x0, y0, x1, y1 = roi
+        left, right = sorted((x0, x1))
+        top, bottom = sorted((y0, y1))
+        self._roi_coords.setText(
+            f"ROI: x0={left}, y0={top}, x1={right}, y1={bottom}"
+        )
+        self._roi_coords.show()
 
     def set_theme(self, theme_name: str) -> None:
         """Update inline-styled elements for the current theme."""

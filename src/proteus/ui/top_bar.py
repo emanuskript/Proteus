@@ -1,12 +1,15 @@
-"""Top application bar with logo, title, and theme toggle."""
+"""Top application bar with logo and theme toggle."""
 
-from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QPushButton
+from PySide6.QtGui import QPixmap
 from PySide6.QtCore import Qt, Signal
+from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QPushButton
+
+from proteus.core.utils import resource_path
 from proteus.ui.theme import THEME_INFO, next_theme
 
 
 class TopBar(QFrame):
-    """Slim header bar: logo + title on the left, theme toggle on the right."""
+    """Slim header bar: logo on the left, theme toggle on the right."""
 
     theme_toggle_clicked = Signal()
 
@@ -19,10 +22,19 @@ class TopBar(QFrame):
         layout.setContentsMargins(16, 0, 16, 0)
         layout.setSpacing(10)
 
-        # Title
-        self._title = QLabel("Proteus")
-        self._title.setObjectName("appTitle")
-        layout.addWidget(self._title)
+        self._brand = QLabel()
+        self._brand.setObjectName("appLogo")
+        self._brand.setToolTip("Proteus")
+        self._brand.setAlignment(Qt.AlignVCenter | Qt.AlignLeft)
+        logo_pixmap = QPixmap(resource_path("Proteus.png"))
+        if not logo_pixmap.isNull():
+            self._brand.setPixmap(
+                logo_pixmap.scaled(32, 32, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            )
+            self._brand.setFixedSize(40, 40)
+        else:
+            self._brand.setText("Proteus")
+        layout.addWidget(self._brand)
 
         layout.addStretch()
 
@@ -46,12 +58,6 @@ class TopBar(QFrame):
         self._theme_btn.setToolTip(f"Current: {label} — click for {nxt_label}")
 
     def set_theme(self, theme_name: str) -> None:
-        """Update the toggle button and title style for the current theme."""
+        """Update the toggle button for the current theme."""
         self._current_theme = theme_name
         self._update_theme_button(theme_name)
-        # Title colour follows the theme text colour
-        from proteus.ui.theme import get_text_color
-        color = get_text_color(theme_name)
-        self._title.setStyleSheet(
-            f"font-size: 15px; font-weight: 600; color: {color}; border: none;"
-        )

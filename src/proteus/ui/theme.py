@@ -293,11 +293,30 @@ QPushButton#themeToggle:hover {{
     background-color: {t['muted']};
 }}
 
+QLabel#appLogo {{
+    border: none;
+    padding: 0;
+}}
+
 /* ---- Sub-category labels in sidebar ---- */
 QLabel#subCategoryLabel {{
     font-size: 11px;
     font-weight: 600;
     color: {t['text_sec']};
+}}
+
+QLabel#roiHintLabel {{
+    color: {t['text_sec']};
+    font-size: 12px;
+    font-style: italic;
+    padding: 2px 0 6px 0;
+}}
+
+QLabel#roiCoordsLabel {{
+    color: {t['checked_text']};
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 0 2px 0;
 }}
 """
 

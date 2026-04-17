@@ -24,7 +24,8 @@ class RoiRectItem(QGraphicsRectItem):
 
     def __init__(self):
         super().__init__()
-        pen = QPen(QColor("#00ff99"), 2, Qt.DashLine)
+        pen = QPen(QColor("#56c7ff"), 4, Qt.DashLine)
+        pen.setCosmetic(True)
         self.setPen(pen)
         self.setBrush(QBrush(Qt.NoBrush))
 
@@ -88,7 +89,7 @@ class ImageCanvas(QGraphicsView):
             logo_pixmap = QPixmap(logo_path)
             if not logo_pixmap.isNull():
                 self._placeholder_logo.setPixmap(
-                    logo_pixmap.scaled(140, 140, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                    logo_pixmap.scaled(180, 180, Qt.KeepAspectRatio, Qt.SmoothTransformation)
                 )
         except Exception:
             pass

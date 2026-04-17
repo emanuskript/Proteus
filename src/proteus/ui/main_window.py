@@ -188,6 +188,7 @@ class ProteusMainWindow(QMainWindow):
             self.canvas.clear()
         self.canvas.set_draw_mask(self.draw_mask)
         self.canvas.set_roi(self.roi)
+        self.sidebar.set_roi_coordinates(self.roi)
 
     def set_status(self, text: str) -> None:
         self.status_bar.set_text(text)
@@ -197,6 +198,10 @@ class ProteusMainWindow(QMainWindow):
     def _on_mode_changed(self, mode: str) -> None:
         self.canvas.set_mode(mode)
         self.sidebar.highlight_mode(mode)
+        if mode == "roi":
+            self.sidebar.show_roi_hint()
+        else:
+            self.sidebar.hide_roi_hint()
 
     def _on_brush_size_changed(self, value: int) -> None:
         self.brush_size = value
@@ -328,6 +333,7 @@ class ProteusMainWindow(QMainWindow):
             cmd = RoiChangeCommand(self, before, None)
             self._undo_stack.push(cmd)
             self.canvas.set_roi(None)
+            self.sidebar.set_roi_coordinates(None)
             self.set_status("ROI cleared")
 
     # ---- ROI handling ----
@@ -337,6 +343,7 @@ class ProteusMainWindow(QMainWindow):
             self._roi_before = self.roi
         self.roi = (x0, y0, x1, y1)
         self.canvas.set_roi(self.roi)
+        self.sidebar.set_roi_coordinates(self.roi)
 
     def _on_roi_finished(self) -> None:
         if self._roi_before == self.roi:
@@ -350,6 +357,7 @@ class ProteusMainWindow(QMainWindow):
         """Called by undo commands to restore ROI state."""
         self.roi = roi
         self.canvas.set_roi(self.roi)
+        self.sidebar.set_roi_coordinates(self.roi)
 
     # ---- Image processing operations ----
 

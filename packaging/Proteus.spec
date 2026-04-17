@@ -19,7 +19,7 @@ from PyInstaller.utils.hooks import collect_data_files
 PROJECT_ROOT = os.path.normpath(os.path.join(SPECPATH, '..'))
 
 # ---- Version (single source of truth: pyproject.toml) ----
-APP_VERSION = '2.0.0'
+APP_VERSION = "3.0.0"
 APP_NAME    = 'Proteus'
 
 # ---- Configuration ----

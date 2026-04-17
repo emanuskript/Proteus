@@ -73,6 +73,7 @@ class ImageCanvas(QGraphicsView):
         self._mode: str = "pan"
         self._zoom_factor: float = 1.0
         self._drawing: bool = False
+        self._roi_active: bool = False
         self._roi_origin: QPointF = QPointF()
         self._image_size: tuple = (0, 0)
 
@@ -116,6 +117,8 @@ class ImageCanvas(QGraphicsView):
         pixmap = QPixmap.fromImage(qimg.copy())
         self._image_item.setPixmap(pixmap)
         self._image_size = (w, h)
+        self._drawing = False
+        self._roi_active = False
         self._scene.setSceneRect(0, 0, w, h)
 
     def set_draw_mask(self, mask: np.ndarray | None) -> None:
@@ -142,8 +145,13 @@ class ImageCanvas(QGraphicsView):
         self._roi_item.setVisible(True)
 
     def set_mode(self, mode: str) -> None:
-        """Switch interaction mode: 'pan', 'draw', or 'roi'."""
         self._mode = mode
+
+        if mode != "draw":
+            self._drawing = False
+        if mode != "roi":
+            self._roi_active = False
+
         if mode == "pan":
             self.setDragMode(QGraphicsView.ScrollHandDrag)
             self.setCursor(Qt.OpenHandCursor)
@@ -174,6 +182,8 @@ class ImageCanvas(QGraphicsView):
         self._overlay_item.setPixmap(QPixmap())
         self._roi_item.setVisible(False)
         self._image_size = (0, 0)
+        self._drawing = False
+        self._roi_active = False
         self._placeholder.setVisible(True)
         self._placeholder_logo.setVisible(not self._placeholder_logo.pixmap().isNull())
         self._scene.setSceneRect(QRectF(self.viewport().rect()))
@@ -199,6 +209,14 @@ class ImageCanvas(QGraphicsView):
         self.scale(scale_change, scale_change)
         self.zoom_changed.emit(factor)
         self.status_message.emit(f"Zoom: {factor:.2f}x")
+
+    def _clamp_to_image(self, scene_pos):
+        w, h = self._image_size
+        if w <= 0 or h <= 0:
+            return 0, 0
+        x = max(0, min(int(round(scene_pos.x())), w - 1))
+        y = max(0, min(int(round(scene_pos.y())), h - 1))
+        return x, y
 
     def _update_placeholder_layout(self) -> None:
         if not self._placeholder.isVisible():
@@ -242,24 +260,29 @@ class ImageCanvas(QGraphicsView):
             return
         if event.button() != Qt.LeftButton:
             return
+        if self._image_size[0] <= 0 or self._image_size[1] <= 0:
+            return
         scene_pos = self.mapToScene(event.position().toPoint())
-        ix, iy = int(scene_pos.x()), int(scene_pos.y())
+        ix, iy = self._clamp_to_image(scene_pos)
         if self._mode == "draw":
             self._drawing = True
             self.brush_stroke.emit(ix, iy)
         elif self._mode == "roi":
-            self._roi_origin = scene_pos
+            self._roi_origin = QPointF(ix, iy)
+            self._roi_active = True
             self.roi_changed.emit(ix, iy, ix, iy)
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
         if self._mode == "pan":
             super().mouseMoveEvent(event)
             return
+        if self._image_size[0] <= 0 or self._image_size[1] <= 0:
+            return
         scene_pos = self.mapToScene(event.position().toPoint())
-        ix, iy = int(scene_pos.x()), int(scene_pos.y())
-        if self._mode == "draw" and self._drawing:
+        ix, iy = self._clamp_to_image(scene_pos)
+        if self._mode == "draw" and self._drawing and event.buttons() & Qt.LeftButton:
             self.brush_stroke.emit(ix, iy)
-        elif self._mode == "roi":
+        elif self._mode == "roi" and self._roi_active and event.buttons() & Qt.LeftButton:
             ox, oy = int(self._roi_origin.x()), int(self._roi_origin.y())
             self.roi_changed.emit(ox, oy, ix, iy)
 
@@ -267,10 +290,19 @@ class ImageCanvas(QGraphicsView):
         if self._mode == "pan":
             super().mouseReleaseEvent(event)
             return
+        if event.button() != Qt.LeftButton:
+            return
+        if self._image_size[0] <= 0 or self._image_size[1] <= 0:
+            return
+        scene_pos = self.mapToScene(event.position().toPoint())
+        ix, iy = self._clamp_to_image(scene_pos)
         if self._mode == "draw":
             self._drawing = False
             self.draw_finished.emit()
-        elif self._mode == "roi":
+        elif self._mode == "roi" and self._roi_active:
+            ox, oy = int(self._roi_origin.x()), int(self._roi_origin.y())
+            self.roi_changed.emit(ox, oy, ix, iy)
+            self._roi_active = False
             self.roi_finished.emit()
 
     def resizeEvent(self, event) -> None:

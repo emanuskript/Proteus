@@ -6,8 +6,8 @@
 #
 VSVersionInfo(
   ffi=FixedFileInfo(
-    filevers=(2, 0, 0, 0),
-    prodvers=(2, 0, 0, 0),
+    filevers=(3, 0, 0, 0),
+    prodvers=(3, 0, 0, 0),
     mask=0x3f,
     flags=0x0,
     OS=0x40004,
@@ -22,12 +22,12 @@ VSVersionInfo(
         [
           StringStruct(u'CompanyName',      u'Proteus'),
           StringStruct(u'FileDescription',  u'Proteus Scientific Image Processing'),
-          StringStruct(u'FileVersion',      u'2.0.0.0'),
+          StringStruct(u'FileVersion',      u'3.0.0.0'),
           StringStruct(u'InternalName',     u'Proteus'),
           StringStruct(u'LegalCopyright',   u'Copyright 2024 Proteus. All rights reserved.'),
           StringStruct(u'OriginalFilename', u'Proteus.exe'),
           StringStruct(u'ProductName',      u'Proteus'),
-          StringStruct(u'ProductVersion',   u'2.0.0.0'),
+          StringStruct(u'ProductVersion',   u'3.0.0.0'),
         ]
       )
     ]),

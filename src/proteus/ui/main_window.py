@@ -339,6 +339,9 @@ class ProteusMainWindow(QMainWindow):
         self.canvas.set_roi(self.roi)
 
     def _on_roi_finished(self) -> None:
+        if self._roi_before == self.roi:
+            self._roi_before = None
+            return
         cmd = RoiChangeCommand(self, self._roi_before, self.roi)
         self._undo_stack.push(cmd)
         self._roi_before = None
